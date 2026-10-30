@@ -1,12 +1,15 @@
 // Chain: <audio> -> MediaElementSource -> fadeGain -> volGain -> Analyser -> masterGain -> masterAnalyser -> out
-interface Ch { el: HTMLAudioElement; url: string; fade: GainNode; vol: GainNode; an: AnalyserNode; buf: Float32Array; timer?: number }
+const makeBuf = () => new Float32Array(1024)
+type Buf = ReturnType<typeof makeBuf>
+interface Ch { el: HTMLAudioElement; url: string; fade: GainNode; vol: GainNode; an: AnalyserNode; buf: Buf; timer?: number }
 class Engine {
   ctx = new AudioContext()
   master = this.ctx.createGain()
   mAn = this.ctx.createAnalyser()
-  private mBuf = new Float32Array(1024)
+  private mBuf: Buf = makeBuf()
   private ch = new Map<string, Ch>()
   onEnded: (id: string) => void = () => {}
+  onStopped: (id: string) => void = () => {}
   onError: (id: string, msg: string) => void = () => {}
   constructor() { this.mAn.fftSize = 1024; this.master.connect(this.mAn); this.mAn.connect(this.ctx.destination) }
   private async wake() { if (this.ctx.state === 'suspended') await this.ctx.resume() }
@@ -18,7 +21,7 @@ class Engine {
     an.fftSize = 1024; src.connect(fade); fade.connect(vol); vol.connect(an); an.connect(this.master)
     el.onended = () => this.onEnded(id)
     el.onerror = () => this.onError(id, 'Không giải mã/phát được file này')
-    c = { el, url: '', fade, vol, an, buf: new Float32Array(1024) }; this.ch.set(id, c); return c
+    c = { el, url: '', fade, vol, an, buf: makeBuf() }; this.ch.set(id, c); return c
   }
   load(id: string, blob: Blob) {
     const c = this.ensure(id); this.stop(id)
@@ -39,7 +42,7 @@ class Engine {
   fadeOut(id: string, s = 2) {
     const c = this.ch.get(id); if (!c || c.el.paused) return; this.clr(c)
     const g = c.fade.gain, t = this.ctx.currentTime; g.setValueAtTime(1, t); g.linearRampToValueAtTime(0, t + s)
-    c.timer = window.setTimeout(() => { this.stop(id); this.onEnded(id) }, s * 1000)
+    c.timer = window.setTimeout(() => { this.stop(id); this.onStopped(id) }, s * 1000)
   }
   private clr(c: Ch) { if (c.timer) { clearTimeout(c.timer); c.timer = undefined } c.fade.gain.cancelScheduledValues(0); c.fade.gain.value = 1 }
   info(id: string): [number, number] { const e = this.ch.get(id)?.el; return e ? [e.currentTime, isFinite(e.duration) ? e.duration : 0] : [0, 0] }

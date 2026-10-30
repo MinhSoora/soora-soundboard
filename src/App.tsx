@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useS } from './store/useStore'
-import { Mixer, Library, Shortcuts, combo } from './components/Pages'
+import { Mixer, Library, Playlists, Shortcuts } from './components/Pages'
+import { combo } from './components/Strip'
+import NowPlaying from './components/NowPlaying'
 
-const NAV = [['mixer', 'Mixer'], ['library', 'Music Library'], ['keys', 'Phím tắt']] as const
+const NAV = [['mixer', 'Mixer'], ['library', 'Music Library'], ['playlist', 'Playlist'], ['keys', 'Phím tắt']] as const
 export default function App() {
   const s = useS(); const [page, setPage] = useState<(typeof NAV)[number][0]>('mixer')
   useEffect(() => { s.init() }, [])
@@ -24,8 +26,9 @@ export default function App() {
         {NAV.map(([k, l]) => <button key={k} className={page === k ? 'on' : ''} onClick={() => setPage(k)}>{l}</button>)}</aside>
       <main key={page}>
         {s.error && <div className="toast" onClick={s.clearError}>{s.error} ✕</div>}
-        {page === 'mixer' ? <Mixer /> : page === 'library' ? <Library /> : <Shortcuts />}
+        {page === 'mixer' ? <Mixer /> : page === 'library' ? <Library /> : page === 'playlist' ? <Playlists /> : <Shortcuts />}
       </main>
+      <NowPlaying />
       <footer>Made by CNGL for free 2026</footer>
     </div>
   )

@@ -1,17 +1,44 @@
 import { useEffect, useRef, useState } from 'react'
 import { useS } from '../store/useStore'
-import { Strip, MasterStrip, fmt } from './Strip'
+import { Strip, MasterStrip, KeyBtn, fmt } from './Strip'
 import { storageInfo } from '../storage/db'
 
 export function Mixer() {
-  const s = useS()
+  const s = useS(); const list = s.players.filter(p => p.pageId === s.page)
   return (
-    <div className="mixer">
-      <div className="strips">
-        {s.players.map(p => <Strip key={p.id} p={p} />)}
-        <button className="addp" onClick={() => s.addPlayer()}>+ Thêm Player</button>
+    <div>
+      <div className="tabs">
+        {s.pages.map(g => <button key={g.id} className={g.id === s.page ? 'on' : ''} onClick={() => s.setPage(g.id)} title="Bấm đúp để đổi tên · thả Player lên đây để chuyển trang"
+          onDoubleClick={() => { const n = prompt('Tên trang', g.name); if (n?.trim()) s.renamePage(g.id, n.trim()) }}
+          onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); s.movePlayerToPage(e.dataTransfer.getData('text/plain'), g.id) }}>{g.name}</button>)}
+        <button onClick={s.addPage}>+ Trang</button>
+        {s.pages.length > 1 && <button onClick={() => confirm('Xóa trang này và các Player trong đó?') && s.removePage(s.page)}>Xóa trang</button>}
       </div>
-      <MasterStrip />
+      <div className="mixer">
+        <div className="strips">{list.map(p => <Strip key={p.id} p={p} />)}<button className="addp" onClick={() => s.addPlayer()}>+ Thêm Player</button></div>
+        <MasterStrip />
+      </div>
+    </div>
+  )
+}
+
+export function Playlists() {
+  const s = useS(); const [sel, setSel] = useState(''); const pl = s.playlists.find(l => l.id === sel) ?? s.playlists[0]
+  return (
+    <div className="plwrap">
+      <div className="pllist">
+        {s.playlists.map(l => <button key={l.id} className={l.id === pl?.id ? 'on' : ''} onClick={() => setSel(l.id)}>♫ {l.name}</button>)}
+        <button onClick={s.addPlaylist}>+ Playlist mới</button>
+      </div>
+      {pl ? <div className="plbody">
+        <h2>{pl.name} <button onClick={() => { const n = prompt('Tên playlist', pl.name); if (n?.trim()) s.renamePlaylist(pl.id, n.trim()) }}>Đổi tên</button> <button onClick={() => confirm('Xóa playlist?') && s.removePlaylist(pl.id)}>Xóa</button></h2>
+        <p className="muted">Kéo thả để đổi thứ tự. Gán playlist cho Player trong Mixer, Player sẽ tự chuyển bài; bật ↻ để lặp cả playlist.</p>
+        <select value="" onChange={e => e.target.value && s.addToPlaylist(pl.id, e.target.value)}>
+          <option value="">+ Thêm bài từ thư viện…</option>{s.tracks.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
+        <table><tbody>{pl.trackIds.map((tid, i) => <tr key={i} draggable onDragStart={e => e.dataTransfer.setData('text/pl', String(i))} onDragOver={e => e.preventDefault()}
+          onDrop={e => s.moveInPlaylist(pl.id, +e.dataTransfer.getData('text/pl'), i)}>
+          <td>⠿ {i + 1}</td><td>{s.tracks.find(t => t.id === tid)?.name}</td><td className="acts"><button onClick={() => s.removeFromPlaylist(pl.id, i)}>Xóa</button></td></tr>)}</tbody></table>
+      </div> : <p className="muted">Chưa có playlist – bấm “+ Playlist mới”.</p>}
     </div>
   )
 }
@@ -45,27 +72,13 @@ export function Library() {
   )
 }
 
-export const combo = (e: KeyboardEvent | React.KeyboardEvent) => {
-  if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return ''
-  return [e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift', e.key.length === 1 ? e.key.toUpperCase() : e.key === ' ' ? 'Space' : e.key].filter(Boolean).join('+')
-}
-
 export function Shortcuts() {
-  const s = useS(); const [warn, setWarn] = useState('')
-  const onKey = (id: string) => (e: React.KeyboardEvent) => {
-    e.preventDefault(); e.stopPropagation(); const k = combo(e); if (!k) return
-    if (k === 'Escape') return s.patch(id, { key: undefined })
-    const dup = s.players.find(p => p.key === k && p.id !== id)
-    if (dup || k === 'Escape') return setWarn(`Phím ${k} đã được gán cho "${dup!.name}"`)
-    setWarn(''); s.patch(id, { key: k })
-  }
+  const s = useS()
   return (
     <div><h2>Phím tắt</h2>
-      <p className="muted">Bấm vào ô rồi nhấn tổ hợp phím (Ctrl/Alt/Shift + phím). Escape trong ô để xóa. Phím <b>Esc</b> toàn cục = Stop All.</p>
+      <p className="muted">Bấm vào ô rồi nhấn tổ hợp phím (Ctrl/Alt/Shift + phím). Esc trong ô để xóa. Phím <b>Esc</b> toàn cục = Stop All. Phím cũng hiện nổi trên từng Player.</p>
       <p className="warn">Giới hạn: phím tắt chỉ hoạt động khi tab SooraSound đang được focus. Trình duyệt không nhận phím khi chạy nền hoặc bị thu nhỏ.</p>
-      {warn && <p className="err">{warn}</p>}
-      <table><tbody>{s.players.map(p => <tr key={p.id}><td>{p.name}</td><td>Phát / Tạm dừng</td>
-        <td><button data-capture="1" className="cap" onKeyDown={onKey(p.id)}>{p.key ?? 'Bấm để gán phím'}</button></td></tr>)}</tbody></table>
+      <table><tbody>{s.players.map(p => <tr key={p.id}><td><span className="dot" style={{ background: p.color }} /> {p.name}</td><td className="muted">{s.pages.find(g => g.id === p.pageId)?.name}</td><td>Phát / Tạm dừng</td><td><KeyBtn p={p} /></td></tr>)}</tbody></table>
     </div>
   )
 }
