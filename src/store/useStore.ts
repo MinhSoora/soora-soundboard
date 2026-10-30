@@ -43,7 +43,8 @@ export const useS = create<S>((set, get) => ({
     const cfg = await db.get<{ players: Player[]; master: number; pages: Page[]; playlists: Playlist[] }>('cfg')
     const pages = cfg?.pages?.length ? cfg.pages : [{ id: uid(), name: 'Trang 1' }]
     const base = { volume: 0.8, loop: false, muted: false, idx: 0, pageId: pages[0].id }
-    const players = (cfg?.players ?? [{ id: uid(), name: 'Player 1', ...base, color: COLORS[0] }]).map((p, i) => ({ ...base, color: COLORS[i % COLORS.length], ...p }))
+    const raw: Player[] = cfg?.players ?? [{ id: uid(), name: 'Player 1', ...base, color: COLORS[0] }]
+    const players: Player[] = raw.map((p, i) => ({ ...p, color: p.color ?? COLORS[i % COLORS.length], pageId: p.pageId ?? pages[0].id, idx: p.idx ?? 0 }))
     set({ tracks, players, pages, page: pages[0].id, playlists: cfg?.playlists ?? [], master: cfg?.master ?? 0.9, ready: true })
     players.forEach(p => { loadCur(p); engine.setVolume(p.id, p.volume, p.muted); engine.setLoop(p.id, p.loop && !p.playlistId) })
     engine.setMaster(get().master, false)
@@ -57,7 +58,7 @@ export const useS = create<S>((set, get) => ({
   },
   async importFiles(files) {
     const ok = /\.(mp3|wav|ogg|m4a|flac)$/i; const added: Track[] = []
-    for (const f of Array.from(files)) {
+    for (const f of Array.from(files as ArrayLike<File>)) {
       if (!ok.test(f.name) && !f.type.startsWith('audio/')) { set({ error: `Bỏ qua ${f.name}: định dạng không hỗ trợ` }); continue }
       const duration = await getDuration(f); if (duration < 0) { set({ error: `Không giải mã được ${f.name}` }); continue }
       const t: Track = { id: uid(), name: f.name.replace(/\.[^.]+$/, ''), size: f.size, duration, blob: f }

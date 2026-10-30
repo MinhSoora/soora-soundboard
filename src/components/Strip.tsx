@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react'
+import type { CSSProperties, KeyboardEvent as RKeyboardEvent } from 'react'
 import { engine } from '../audio/engine'
 import { useS, Player, curTrackId } from '../store/useStore'
 
 export const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
-export const combo = (e: KeyboardEvent | React.KeyboardEvent) => {
+export const combo = (e: KeyboardEvent | RKeyboardEvent) => {
   if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return ''
   return [e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift', e.key.length === 1 ? e.key.toUpperCase() : e.key === ' ' ? 'Space' : e.key].filter(Boolean).join('+')
 }
@@ -52,7 +53,7 @@ export function Strip({ p }: { p: Player }) {
   const pl = s.playlists.find(x => x.id === p.playlistId)
   const track = s.tracks.find(t => t.id === curTrackId(s, p))
   return (
-    <div className={`strip ${st} ${armed ? 'armed' : ''}`} style={{ '--c': p.color } as React.CSSProperties}
+    <div className={`strip ${st} ${armed ? 'armed' : ''}`} style={{ '--c': p.color } as CSSProperties}
       onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); s.movePlayer(e.dataTransfer.getData('text/plain'), p.id) }}>
       {p.key && <div className="kb">{p.key}</div>}
       <div className="head">

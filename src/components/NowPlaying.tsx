@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import type { CSSProperties } from 'react'
 import { engine } from '../audio/engine'
 import { useS, Player, curTrackId } from '../store/useStore'
 import { fmt } from './Strip'
@@ -19,7 +20,7 @@ function Chip({ p }: { p: Player }) {
   }, [p.id])
   const t = s.tracks.find(x => x.id === curTrackId(s, p))
   return (
-    <div className={`chip ${armed ? 'armed' : st}`} style={{ '--c': p.color } as React.CSSProperties}>
+    <div className={`chip ${armed ? 'armed' : st}`} style={{ '--c': p.color } as CSSProperties}>
       <div className="ctop"><span className="dot" /><b>{p.name}</b><span className="cs">{armed ? 'Sắp phát' : st === 'play' ? 'Đang phát' : 'Tạm dừng'}</span><span ref={rem} className="rem" /></div>
       <div className="ctrk">{t?.name ?? '—'}</div><div className="cbar"><div ref={bar} /></div>
     </div>
