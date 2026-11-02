@@ -3,6 +3,7 @@ import { useS } from './store/useStore'
 import { Mixer, Library, Playlists, Shortcuts } from './components/Pages'
 import { combo } from './components/Strip'
 import NowPlaying from './components/NowPlaying'
+import RotateWarning from './components/RotateWarning'
 
 const NAV = [['mixer', 'Mixer'], ['library', 'Music Library'], ['playlist', 'Playlist'], ['keys', 'Phím tắt']] as const
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
         {page === 'mixer' ? <Mixer /> : page === 'library' ? <Library /> : page === 'playlist' ? <Playlists /> : <Shortcuts />}
       </main>
       <NowPlaying />
+      <RotateWarning />
       <footer>Made by CNGL for free 2026</footer>
     </div>
   )
