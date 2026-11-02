@@ -58,3 +58,9 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px so
 .modal{position:fixed;inset:0;background:#000b;display:grid;place-items:center;z-index:50}
 .mbox{width:460px;max-width:94vw;max-height:92vh;overflow:auto;background:var(--pn);border:1px solid var(--ln);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;color:var(--tx);font-weight:400}
 .mbox h3{margin:0 0 4px}.mrow{display:flex;align-items:center;gap:8px}.mrow label{width:130px;color:var(--mu);flex:none}.mrow input,.mrow select{flex:1;min-width:0;background:#0b0e13;border:1px solid var(--ln);border-radius:8px;padding:6px}.mrow input[type=color]{flex:none}
+/* ---- rotate warning ---- */
+.rotate{position:fixed;inset:0;z-index:100;background:#05070ceb;backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px}
+.rbox{max-width:340px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px}
+.rbox h3{margin:0;font-size:20px}.rbox p{margin:0;color:var(--mu);line-height:1.5}
+.phone{width:42px;height:72px;border:3px solid var(--ac);border-radius:9px;box-shadow:0 0 18px #2ee6a666;animation:rot 2.2s ease-in-out infinite}
+@keyframes rot{0%,25%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
